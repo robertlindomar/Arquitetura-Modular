@@ -1,4 +1,4 @@
-# Backend TCC
+# Arquitetura Modular e Limpa
 
 Este é um projeto backend desenvolvido com Node.js, Express, TypeScript e Prisma, seguindo uma arquitetura modular e limpa.
 
