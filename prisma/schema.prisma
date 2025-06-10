@@ -7,9 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  createdAt DateTime @default(now())
+model Categoria {
+  id   String @id @default(uuid())
+  nome String
 }

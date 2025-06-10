@@ -1,17 +1,12 @@
-import { FastifyInstance, FastifyPluginOptions, FastifyRequest, FastifyReply } from 'fastify';
-import { UserController } from './controllers/users/UserController';
+// src/routes.ts
+import { Router } from "express";
+import { categoriaRoutes } from "./modules/categoria/routes";
 
-export async function routes(fastify: FastifyInstance, options: FastifyPluginOptions) {
+export function routes() {
+    const router = Router();
 
+    // Rotas do módulo categoria
+    router.use("/categoria", categoriaRoutes());
 
-    const userController = new UserController();
-    fastify.post("/user", userController.create.bind(userController));
-    fastify.get("/user", userController.list.bind(userController));
-    fastify.get("/user/:id", userController.getById.bind(userController));
-    fastify.put("/user/:id", userController.update.bind(userController));
-    fastify.delete("/user/:id", userController.delete.bind(userController));
-
-
-
-
+    return router;
 }
