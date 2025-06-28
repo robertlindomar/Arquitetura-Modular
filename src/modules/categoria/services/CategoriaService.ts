@@ -1,61 +1,61 @@
 import { CategoriaRepository } from "../repositories/CategoriaRepository";
-import { Categoria } from "../models/Categoria";
-import { CategoriaRequest } from "../dtos/CategoriaRequest";
-
-class AppError extends Error {
-    constructor(public statusCode: number, message: string) {
-        super(message);
-        this.name = 'AppError';
-    }
-}
+import { CategoriaRequestDTO } from "../dtos/CategoriaRequestDTO";
+import { CategoriaResponseDTO } from "../dtos/CategoriaResponseDTO";
+import { AppError } from "../../../shared/errors/AppError";
 
 export class CategoriaService {
-    private repository: CategoriaRepository;
+
+    private categoriaRepository: CategoriaRepository;
 
     constructor() {
-        this.repository = new CategoriaRepository();
+        this.categoriaRepository = new CategoriaRepository();
     }
 
-    async criar(data: CategoriaRequest): Promise<Categoria> {
-        if (!data.nome) {
-            throw new AppError(400, "Nome é obrigatório");
+    async criar(request: CategoriaRequestDTO): Promise<CategoriaResponseDTO> {
+        if (!request.nome || typeof request.nome !== 'string' || request.nome.trim() === '') {
+            throw new AppError("Nome é obrigatório e deve ser válido", 400);
         }
-        return this.repository.criar(data);
+        const categoria = await this.categoriaRepository.criar(request);
+        return categoria.toResponse();
     }
 
-    async listar(): Promise<Categoria[]> {
-        return this.repository.listar();
+    async listar(): Promise<CategoriaResponseDTO[]> {
+        const categorias = await this.categoriaRepository.listar();
+        return categorias.map(categoria => categoria.toResponse());
     }
 
-    async buscarPorId(id: string): Promise<Categoria | null> {
-        if (!id) {
-            throw new AppError(400, "ID é obrigatório");
+    async buscarPorId(id: string): Promise<CategoriaResponseDTO | null> {
+        if (!id || typeof id !== 'string' || id.trim() === '') {
+            throw new AppError("ID válido é obrigatório", 400);
         }
-        return this.repository.buscarPorId(id);
+        const categoria = await this.categoriaRepository.buscarPorId(id);
+        return categoria ? categoria.toResponse() : null;
     }
 
-    async atualizar(id: string, data: CategoriaRequest): Promise<Categoria> {
-        if (!id) {
-            throw new AppError(400, "ID é obrigatório");
+    async buscarPorNome(nome: string): Promise<CategoriaResponseDTO | null> {
+        if (!nome || typeof nome !== 'string' || nome.trim() === '') {
+            throw new AppError("Nome é obrigatório", 400);
         }
-        if (!data.nome) {
-            throw new AppError(400, "Nome é obrigatório");
-        }
-        const categoria = await this.repository.buscarPorId(id);
-        if (!categoria) {
-            throw new AppError(404, "Categoria não encontrada");
-        }
-        return this.repository.atualizar(id, data);
+        const categoria = await this.categoriaRepository.buscarPorNome(nome);
+        return categoria ? categoria.toResponse() : null;
     }
 
-    async deletar(id: string): Promise<Categoria> {
-        if (!id) {
-            throw new AppError(400, "ID é obrigatório");
+    async atualizar(id: string, data: CategoriaRequestDTO): Promise<CategoriaResponseDTO> {
+        if (!id || typeof id !== 'string' || id.trim() === '') {
+            throw new AppError("ID válido é obrigatório", 400);
         }
-        const categoria = await this.repository.buscarPorId(id);
-        if (!categoria) {
-            throw new AppError(404, "Categoria não encontrada");
+        if (!data || !data.nome || typeof data.nome !== 'string' || data.nome.trim() === '') {
+            throw new AppError("Nome é obrigatório e deve ser válido", 400);
         }
-        return this.repository.deletar(id);
+        const categoria = await this.categoriaRepository.atualizar(id, data);
+        return categoria.toResponse();
     }
-} 
+
+    async deletar(id: string): Promise<CategoriaResponseDTO> {
+        if (!id || typeof id !== 'string' || id.trim() === '') {
+            throw new AppError("ID válido é obrigatório", 400);
+        }
+        const categoria = await this.categoriaRepository.deletar(id);
+        return categoria.toResponse();
+    }
+}

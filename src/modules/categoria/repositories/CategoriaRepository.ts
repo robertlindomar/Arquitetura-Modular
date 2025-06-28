@@ -1,57 +1,106 @@
-import { PrismaClient, Categoria as PrismaCategoria } from "@prisma/client";
-import { Categoria } from "../models/Categoria";
-import { CategoriaRequest } from "../dtos/CategoriaRequest";
+import { PrismaClient } from '@prisma/client';
+import { CategoriaModel } from "../models/CategoriaModel";
+import { AppError } from "../../../shared/errors/AppError";
+import { CategoriaRequestDTO } from '../dtos/CategoriaRequestDTO';
+
+const prisma = new PrismaClient();
 
 export class CategoriaRepository {
-    private prisma: PrismaClient;
 
-    constructor() {
-        this.prisma = new PrismaClient();
-    }
+    async criar(request: CategoriaRequestDTO): Promise<CategoriaModel> {
+        const categoria = CategoriaModel.dtos(request);
+        if (!categoria) {
+            throw new Error("Dados inválidos para criar Categoria");
+        }
 
-    async criar(data: CategoriaRequest): Promise<Categoria> {
-        const categoria = await this.prisma.categoria.create({
-            data: {
-                nome: data.nome
-            }
+        const categoriaExistente = await prisma.categoria.findFirst({
+            where: {
+                nome: categoria.nome
+            },
         });
-        return this.mapToModel(categoria);
-    }
 
-    async listar(): Promise<Categoria[]> {
-        const categorias = await this.prisma.categoria.findMany();
-        return categorias.map(this.mapToModel);
-    }
+        if (categoriaExistente) {
+            throw new AppError("Categoria com este nome já existe.", 409);
+        }
 
-    async buscarPorId(id: string): Promise<Categoria | null> {
-        const categoria = await this.prisma.categoria.findUnique({
-            where: { id }
+        const novaCategoria = await prisma.categoria.create({
+            data: categoria.dataParaPrisma(),
         });
-        return categoria ? this.mapToModel(categoria) : null;
+
+        return CategoriaModel.prismaParaModel(novaCategoria);
     }
 
-    async atualizar(id: string, data: CategoriaRequest): Promise<Categoria> {
-        const categoria = await this.prisma.categoria.update({
+    async listar(): Promise<CategoriaModel[]> {
+        const categorias = await prisma.categoria.findMany();
+        return categorias.map(categoria => CategoriaModel.prismaParaModel(categoria));
+    }
+
+    async buscarPorId(id: string): Promise<CategoriaModel | null> {
+        if (!id) {
+            throw new Error("ID é obrigatório");
+        }
+        const categoriaExistente = await prisma.categoria.findUnique({
             where: { id },
-            data: {
-                nome: data.nome
-            }
         });
-        return this.mapToModel(categoria);
+        if (!categoriaExistente) {
+            throw new AppError("Categoria não encontrada", 404);
+        }
+
+        return CategoriaModel.prismaParaModel(categoriaExistente);
     }
 
-    async deletar(id: string): Promise<Categoria> {
-        const categoria = await this.prisma.categoria.delete({
-            where: { id }
+    async buscarPorNome(nome: string): Promise<CategoriaModel | null> {
+        if (!nome) {
+            throw new Error("Nome é obrigatório");
+        }
+        const categoriaExistente = await prisma.categoria.findFirst({
+            where: { nome },
         });
-        return this.mapToModel(categoria);
+        if (!categoriaExistente) {
+            throw new AppError("Categoria não encontrada", 404);
+        }
+
+        return CategoriaModel.prismaParaModel(categoriaExistente);
     }
 
-    private mapToModel(prismaCategoria: PrismaCategoria): Categoria {
-        return {
-            id: prismaCategoria.id,
-            nome: prismaCategoria.nome
+    async atualizar(id: string, data: CategoriaRequestDTO): Promise<CategoriaModel> {
+        if (!id || !data) {
+            throw new AppError("ID e dados são obrigatórios", 400);
+        }
 
-        };
+        const categoriaExistente = await prisma.categoria.findUnique({
+            where: { id },
+        });
+
+        if (!categoriaExistente) {
+            throw new AppError("Categoria não encontrada", 404);
+        }
+
+        const categoriaAtualizada = await prisma.categoria.update({
+            where: { id },
+            data: CategoriaModel.dtos(data).dataParaPrisma(),
+        });
+
+        return CategoriaModel.prismaParaModel(categoriaAtualizada);
     }
-} 
+
+    async deletar(id: string): Promise<CategoriaModel> {
+        if (!id) {
+            throw new Error("ID é obrigatório");
+        }
+
+        const categoriaExistente = await prisma.categoria.findUnique({
+            where: { id },
+        });
+
+        if (!categoriaExistente) {
+            throw new AppError("Categoria não encontrada", 404);
+        }
+
+        const categoriaDeletada = await prisma.categoria.delete({
+            where: { id },
+        });
+
+        return CategoriaModel.prismaParaModel(categoriaDeletada);
+    }
+}

@@ -65,30 +65,18 @@ O projeto segue uma arquitetura modular, onde cada funcionalidade é encapsulada
 - Mapeiam URLs para controllers
 - Gerenciam middlewares específicos do módulo
 
-## Tecnologias Utilizadas
-
-- **Node.js**: Runtime JavaScript
-- **Express**: Framework web
-- **TypeScript**: Superset JavaScript com tipagem estática
-- **Prisma**: ORM para acesso ao banco de dados
-- **MySQL**: Banco de dados
-
-## Padrões de Projeto
-
-- **Arquitetura Limpa**: Separação clara de responsabilidades
-- **Injeção de Dependência**: Uso de classes e interfaces para desacoplamento
-- **Repository Pattern**: Abstração do acesso a dados
-- **DTO Pattern**: Transferência de dados entre camadas
-- **Service Layer**: Encapsulamento da lógica de negócios
-
 ## Tratamento de Erros
 
-O projeto implementa um tratamento de erros robusto:
+O projeto implementa um tratamento de erros robusto para garantir respostas claras e seguras em caso de falhas:
 
-- Classe `AppError` para erros personalizados
-- Códigos de status HTTP apropriados
-- Mensagens de erro descritivas
-- Tratamento de exceções em cada camada
+- **Classe `AppError`**: Centraliza a criação de erros personalizados, permitindo definir mensagens e códigos de status HTTP específicos.
+- **Middleware global de erros**: Todas as exceções não tratadas são capturadas por um middleware dedicado, que formata e retorna a resposta adequada ao cliente.
+- **Mensagens descritivas**: Os erros retornam mensagens claras, facilitando o entendimento do problema tanto para desenvolvedores quanto para consumidores da API.
+- **Códigos de status apropriados**: Cada erro retorna o código HTTP correspondente (por exemplo, 400 para erros de validação, 404 para não encontrado, 500 para erros internos).
+- **Tratamento em cada camada**: Controllers, services e repositories lançam exceções específicas quando necessário, garantindo que falhas sejam propagadas corretamente.
+
+
+
 
 ## Como Executar
 

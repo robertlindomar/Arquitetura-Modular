@@ -1,86 +1,76 @@
-import { Request, Response } from "express";
 import { CategoriaService } from "../services/CategoriaService";
-import { CategoriaRequest } from "../dtos/CategoriaRequest";
-
-class AppError extends Error {
-    constructor(public statusCode: number, message: string) {
-        super(message);
-        this.name = 'AppError';
-    }
-}
+import { Request, Response, NextFunction } from "express";
 
 export class CategoriaController {
     private service: CategoriaService;
-
     constructor() {
         this.service = new CategoriaService();
     }
 
-    async criar(req: Request, res: Response): Promise<Response> {
+    async criar(req: Request, res: Response, next: NextFunction): Promise<any> {
         try {
-            const data: CategoriaRequest = req.body;
-            const categoria = await this.service.criar(data);
+            const categoria = await this.service.criar(req.body);
             return res.status(201).json(categoria);
         } catch (error) {
-            if (error instanceof AppError) {
-                return res.status(error.statusCode).json({ error: error.message });
-            }
-            return res.status(500).json({ error: "Erro interno do servidor" });
+            next(error);
         }
     }
 
-    async listar(req: Request, res: Response): Promise<Response> {
+    async listar(req: Request, res: Response, next: NextFunction): Promise<any> {
         try {
             const categorias = await this.service.listar();
-            return res.json(categorias);
-        } catch (error) {
-            if (error instanceof AppError) {
-                return res.status(error.statusCode).json({ error: error.message });
+            if (!categorias || categorias.length === 0) {
+                return res.status(200).json({ mensagem: "Nenhuma categoria cadastrada" });
             }
-            return res.status(500).json({ error: "Erro interno do servidor" });
+            return res.status(200).json(categorias);
+        } catch (error) {
+            next(error);
         }
     }
 
-    async buscarPorId(req: Request, res: Response): Promise<Response> {
+    async buscarPorId(req: Request, res: Response, next: NextFunction): Promise<any> {
         try {
             const { id } = req.params;
+            if (!id) return res.status(400).json({ error: "ID é obrigatório" });
             const categoria = await this.service.buscarPorId(id);
-            if (!categoria) {
-                throw new AppError(404, "Categoria não encontrada");
-            }
-            return res.json(categoria);
+            if (!categoria) return res.status(404).json({ error: "Categoria não encontrada" });
+            return res.status(200).json(categoria);
         } catch (error) {
-            if (error instanceof AppError) {
-                return res.status(error.statusCode).json({ error: error.message });
-            }
-            return res.status(500).json({ error: "Erro interno do servidor" });
+            next(error);
         }
     }
 
-    async atualizar(req: Request, res: Response): Promise<Response> {
+    async buscarPorNome(req: Request, res: Response, next: NextFunction): Promise<any> {
         try {
-            const { id } = req.params;
-            const data: CategoriaRequest = req.body;
-            const categoria = await this.service.atualizar(id, data);
-            return res.json(categoria);
+            const { nome } = req.params;
+            if (!nome) return res.status(400).json({ error: "Nome é obrigatório" });
+            const categoria = await this.service.buscarPorNome(String(nome));
+            if (!categoria) return res.status(404).json({ error: "Categoria não encontrada" });
+            return res.status(200).json(categoria);
         } catch (error) {
-            if (error instanceof AppError) {
-                return res.status(error.statusCode).json({ error: error.message });
-            }
-            return res.status(500).json({ error: "Erro interno do servidor" });
+            next(error);
         }
     }
 
-    async deletar(req: Request, res: Response): Promise<Response> {
+    async atualizar(req: Request, res: Response, next: NextFunction): Promise<any> {
         try {
             const { id } = req.params;
+            if (!id) return res.status(400).json({ error: "ID é obrigatório" });
+            const categoriaAtualizada = await this.service.atualizar(id, req.body);
+            return res.status(200).json(categoriaAtualizada);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async deletar(req: Request, res: Response, next: NextFunction): Promise<any> {
+        try {
+            const { id } = req.params;
+            if (!id) return res.status(400).json({ error: "ID é obrigatório" });
             await this.service.deletar(id);
-            return res.status(204).send();
+            return res.status(200).json({ mensagem: "Categoria deletada com sucesso" });
         } catch (error) {
-            if (error instanceof AppError) {
-                return res.status(error.statusCode).json({ error: error.message });
-            }
-            return res.status(500).json({ error: "Erro interno do servidor" });
+            next(error);
         }
     }
-} 
+}
